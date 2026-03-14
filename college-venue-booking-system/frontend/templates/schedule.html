@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Schedule - Smart College Venue Booking System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-building me-2"></i>VenueBook
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-house-door me-1"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/venues.html"><i class="bi bi-geo-alt me-1"></i>Venues</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/schedule.html"><i class="bi bi-calendar3 me-1"></i>Events</a>
+                    </li>
+                </ul>
+                <div id="authNav" class="d-flex"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="bg-primary text-white py-4">
+        <div class="container">
+            <h1 class="h2 mb-0"><i class="bi bi-calendar3 me-2"></i>Event Schedule</h1>
+            <p class="mb-0 opacity-75">View upcoming events and activities on campus</p>
+        </div>
+    </section>
+
+    <!-- Filters -->
+    <section class="bg-white border-bottom py-3">
+        <div class="container">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Filter by Venue</label>
+                    <select class="form-select" id="venueFilter">
+                        <option value="">All Venues</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" id="dateFilter">
+                        <option value="all">All Upcoming</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="bi bi-x-circle me-1"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Event Schedule -->
+    <section class="py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div id="scheduleContainer">
+                        <!-- Schedule will be loaded here -->
+                    </div>
+                </div>
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <!-- Calendar Preview -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-calendar-week me-1"></i>Quick Overview</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="calendarOverview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="bi bi-bar-chart me-1"></i>Statistics</h6>
+                        </div>
+                        <div class="card-body" id="eventStats">
+                            <!-- Stats will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Event Detail Modal -->
+    <div class="modal fade" id="eventModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Event Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="eventModalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        let allEvents = [];
+        const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateNavigation();
+            await loadVenuesFilter();
+            await loadSchedule();
+            
+            // Add filter listeners
+            document.getElementById('venueFilter').addEventListener('change', filterEvents);
+            document.getElementById('dateFilter').addEventListener('change', filterEvents);
+        });
+
+        async function loadVenuesFilter() {
+            try {
+                const venues = await API.getVenues();
+                const select = document.getElementById('venueFilter');
+                venues.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.id;
+                    option.textContent = v.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading venues:', error);
+            }
+        }
+
+        async function loadSchedule() {
+            const container = document.getElementById('scheduleContainer');
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Loading event schedule...</p>
+                </div>
+            `;
+
+            try {
+                allEvents = await API.getBookingSchedule(50);
+                renderEvents(allEvents);
+                updateStats();
+
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Error loading schedule: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function filterEvents() {
+            const venueId = document.getElementById('venueFilter').value;
+            const dateRange = document.getElementById('dateFilter').value;
+            
+            let filtered = [...allEvents];
+            
+            // Filter by venue
+            if (venueId) {
+                filtered = filtered.filter(e => e.venue_id == venueId);
+            }
+            
+            // Filter by date range
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (dateRange === 'today') {
+                filtered = filtered.filter(e => {
+                    const eventDate = new Date(e.event_date);
+                    return eventDate.toDateString() === today.toDateString();
+                });
+            } else if (dateRange === 'week') {
+                const weekEnd = new Date(today);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+                filtered = filtered.filter(e => {
+                    const eventDate = new Date(e.event_date);
+                    return eventDate >= today && eventDate <= weekEnd;
+                });
+            } else if (dateRange === 'month') {
+                const monthEnd = new Date(today);
+                monthEnd.setMonth(monthEnd.getMonth() + 1);
+                filtered = filtered.filter(e => {
+                    const eventDate = new Date(e.event_date);
+                    return eventDate >= today && eventDate <= monthEnd;
+                });
+            }
+            
+            renderEvents(filtered);
+        }
+
+        function renderEvents(events) {
+            const container = document.getElementById('scheduleContainer');
+
+            if (events.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-x display-1 text-muted"></i>
+                        <h4 class="mt-3">No events found</h4>
+                        <p class="text-muted">No upcoming events match your filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Group events by date
+            const grouped = {};
+            events.forEach(event => {
+                const dateKey = event.event_date;
+                if (!grouped[dateKey]) {
+                    grouped[dateKey] = [];
+                }
+                grouped[dateKey].push(event);
+            });
+
+            let html = '';
+            const sortedDates = Object.keys(grouped).sort();
+
+            sortedDates.forEach(dateKey => {
+                const eventDate = new Date(dateKey);
+                const today = new Date();
+                const isToday = eventDate.toDateString() === today.toDateString();
+                const isTomorrow = eventDate.toDateString() === new Date(today.setDate(today.getDate() + 1)).toDateString();
+
+                const dateStr = eventDate.toLocaleDateString('en-US', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+
+                let dateLabel = dateStr;
+                if (isToday) dateLabel = 'Today - ' + dateStr;
+                else if (isTomorrow) dateLabel = 'Tomorrow - ' + dateStr;
+
+                html += `
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="bi bi-calendar-date me-2"></i>${dateLabel}</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                `;
+
+                grouped[dateKey].forEach(event => {
+                    html += `
+                        <div class="list-group-item list-group-item-action cursor-pointer" 
+                             onclick="showEventDetail(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${event.event_name}</h6>
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt me-1"></i>${event.venue.name}
+                                        <span class="mx-2">|</span>
+                                        <i class="bi bi-person me-1"></i>${event.user.name}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-primary">${event.start_time} - ${event.end_time}</span>
+                                    <br>
+                                    <small class="text-muted">${event.participants} participants</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function showEventDetail(event) {
+            const eventDate = new Date(event.event_date);
+            const dateStr = eventDate.toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            document.getElementById('eventModalBody').innerHTML = `
+                <div class="mb-3">
+                    <h6 class="text-muted mb-1">Event Name</h6>
+                    <h5 class="mb-0">${event.event_name}</h5>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Date</h6>
+                            <p class="mb-0">${dateStr}</p>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Time</h6>
+                            <p class="mb-0">${event.start_time} - ${event.end_time}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6 class="text-muted mb-1">Venue</h6>
+                    <p class="mb-0">${event.venue.name}</p>
+                    <small class="text-muted">${event.venue.location || ''}</small>
+                </div>
+                <div class="mb-3">
+                    <h6 class="text-muted mb-1">Organizer</h6>
+                    <p class="mb-0">${event.user.name}</p>
+                    <small class="text-muted">${event.department || event.user.department || ''}</small>
+                </div>
+                <div class="mb-0">
+                    <h6 class="text-muted mb-1">Expected Attendance</h6>
+                    <p class="mb-0">${event.participants} people</p>
+                </div>
+            `;
+
+            eventModal.show();
+        }
+
+        function updateStats() {
+            const statsContainer = document.getElementById('eventStats');
+            const calendarContainer = document.getElementById('calendarOverview');
+
+            // Calculate stats
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const thisWeek = allEvents.filter(e => {
+                const eventDate = new Date(e.event_date);
+                const weekEnd = new Date(today);
+                weekEnd.setDate(weekEnd.getDate() + 7);
+                return eventDate >= today && eventDate <= weekEnd;
+            }).length;
+
+            const thisMonth = allEvents.filter(e => {
+                const eventDate = new Date(e.event_date);
+                const monthEnd = new Date(today);
+                monthEnd.setMonth(monthEnd.getMonth() + 1);
+                return eventDate >= today && eventDate <= monthEnd;
+            }).length;
+
+            statsContainer.innerHTML = `
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Events This Week</span>
+                    <span class="badge bg-primary">${thisWeek}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Events This Month</span>
+                    <span class="badge bg-info">${thisMonth}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Total Upcoming</span>
+                    <span class="badge bg-success">${allEvents.length}</span>
+                </div>
+            `;
+
+            // Calendar overview - show next 7 days
+            let calHtml = '<div class="small">';
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() + i);
+                const dateKey = date.toISOString().split('T')[0];
+                const eventsOnDay = allEvents.filter(e => e.event_date === dateKey);
+                
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const dayNum = date.getDate();
+                const isToday = i === 0;
+
+                calHtml += `
+                    <div class="d-flex justify-content-between align-items-center py-1 ${isToday ? 'bg-primary text-white rounded px-2' : ''}">
+                        <span>${dayName} ${dayNum}</span>
+                        ${eventsOnDay.length > 0 ? `<span class="badge ${isToday ? 'bg-white text-primary' : 'bg-primary'}">${eventsOnDay.length}</span>` : ''}
+                    </div>
+                `;
+            }
+            calHtml += '</div>';
+            calendarContainer.innerHTML = calHtml;
+        }
+
+        function clearFilters() {
+            document.getElementById('venueFilter').value = '';
+            document.getElementById('dateFilter').value = 'all';
+            renderEvents(allEvents);
+        }
+
+        function updateNavigation() {
+            const user = API.getCurrentUser();
+            const authNav = document.getElementById('authNav');
+
+            if (user) {
+                authNav.innerHTML = `
+                    <span class="navbar-text me-3 text-white">
+                        <i class="bi bi-person-circle me-1"></i>${user.name}
+                    </span>
+                    <a href="/my-bookings.html" class="btn btn-outline-light btn-sm me-2">
+                        <i class="bi bi-calendar-check me-1"></i>My Bookings
+                    </a>
+                    ${user.role === 'admin' ? `
+                        <a href="/admin.html" class="btn btn-outline-light btn-sm me-2">
+                            <i class="bi bi-speedometer2 me-1"></i>Admin
+                        </a>
+                    ` : ''}
+                    <button class="btn btn-outline-light btn-sm" onclick="API.logout(); window.location.reload();">
+                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                    </button>
+                `;
+            } else {
+                authNav.innerHTML = `
+                    <a href="/login.html" class="btn btn-outline-light btn-sm me-2">Login</a>
+                    <a href="/register.html" class="btn btn-light btn-sm">Register</a>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

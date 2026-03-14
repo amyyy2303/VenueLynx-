@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - Smart College Venue Booking System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-building me-2"></i>VenueBook
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-house-door me-1"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/venues.html"><i class="bi bi-geo-alt me-1"></i>Venues</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/schedule.html"><i class="bi bi-calendar3 me-1"></i>Events</a>
+                    </li>
+                </ul>
+                <div id="authNav" class="d-flex"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="bg-primary text-white py-4">
+        <div class="container">
+            <h1 class="h2 mb-0"><i class="bi bi-calendar-check me-2"></i>My Bookings</h1>
+            <p class="mb-0 opacity-75">Track and manage your booking requests</p>
+        </div>
+    </section>
+
+    <!-- Filter Tabs -->
+    <section class="bg-white border-bottom py-3">
+        <div class="container">
+            <ul class="nav nav-pills" id="statusTabs">
+                <li class="nav-item">
+                    <button class="nav-link active" data-status="all">All</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-status="pending">
+                        <span class="badge bg-warning me-1">0</span>Pending
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-status="approved">
+                        <span class="badge bg-success me-1">0</span>Approved
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-status="rejected">
+                        <span class="badge bg-danger me-1">0</span>Rejected
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Bookings List -->
+    <section class="py-4">
+        <div class="container">
+            <div id="bookingsContainer">
+                <!-- Bookings will be loaded here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Detail Modal -->
+    <div class="modal fade" id="bookingModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Booking Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="bookingModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" id="cancelBookingBtn" style="display: none;">
+                        <i class="bi bi-x-circle me-1"></i>Cancel Booking
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        let currentBookingId = null;
+        let currentStatus = 'all';
+        const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check authentication
+            const user = API.getCurrentUser();
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            updateNavigation(user);
+            await loadBookings();
+
+            // Add tab click listeners
+            document.querySelectorAll('#statusTabs .nav-link').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('#statusTabs .nav-link').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentStatus = e.target.dataset.status;
+                    filterBookings();
+                });
+            });
+        });
+
+        let allBookings = [];
+
+        async function loadBookings() {
+            const container = document.getElementById('bookingsContainer');
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Loading your bookings...</p>
+                </div>
+            `;
+
+            try {
+                allBookings = await API.getMyBookings();
+                
+                // Update status counts
+                const pendingCount = allBookings.filter(b => b.status === 'pending').length;
+                const approvedCount = allBookings.filter(b => b.status === 'approved').length;
+                const rejectedCount = allBookings.filter(b => b.status === 'rejected').length;
+                
+                document.querySelector('[data-status="pending"] .badge').textContent = pendingCount;
+                document.querySelector('[data-status="approved"] .badge').textContent = approvedCount;
+                document.querySelector('[data-status="rejected"] .badge').textContent = rejectedCount;
+
+                renderBookings(allBookings);
+
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Error loading bookings: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function filterBookings() {
+            let filtered = allBookings;
+            if (currentStatus !== 'all') {
+                filtered = allBookings.filter(b => b.status === currentStatus);
+            }
+            renderBookings(filtered);
+        }
+
+        function renderBookings(bookings) {
+            const container = document.getElementById('bookingsContainer');
+
+            if (bookings.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-x display-1 text-muted"></i>
+                        <h4 class="mt-3">No bookings found</h4>
+                        <p class="text-muted">You haven't made any booking requests yet</p>
+                        <a href="/venues.html" class="btn btn-primary">
+                            <i class="bi bi-search me-1"></i>Browse Venues
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="row g-4">';
+            
+            bookings.forEach(booking => {
+                const eventDate = new Date(booking.event_date);
+                const today = new Date();
+                const isPast = eventDate < today.setHours(0, 0, 0, 0);
+
+                const statusBadge = getStatusBadge(booking.status);
+                const dateStr = eventDate.toLocaleDateString('en-US', {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                });
+
+                html += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm hover-card cursor-pointer ${isPast ? 'opacity-75' : ''}"
+                             onclick="showBookingDetail(${booking.id})">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold">${booking.event_name}</span>
+                                ${statusBadge}
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2">
+                                    <i class="bi bi-geo-alt text-primary me-2"></i>
+                                    ${booking.venue.name}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="bi bi-calendar3 text-primary me-2"></i>
+                                    ${dateStr}
+                                </p>
+                                <p class="mb-0">
+                                    <i class="bi bi-clock text-primary me-2"></i>
+                                    ${booking.start_time} - ${booking.end_time}
+                                </p>
+                                ${booking.admin_remarks ? `
+                                    <div class="mt-2 p-2 bg-light rounded small">
+                                        <strong>Admin Remarks:</strong> ${booking.admin_remarks}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <small class="text-muted">
+                                    ${isPast ? '<i class="bi bi-check-circle me-1"></i>Past Event' : 
+                                    booking.participants + ' participants expected'}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function showBookingDetail(bookingId) {
+            currentBookingId = bookingId;
+            const modalBody = document.getElementById('bookingModalBody');
+            const cancelBtn = document.getElementById('cancelBookingBtn');
+            
+            const booking = allBookings.find(b => b.id === bookingId);
+            if (!booking) return;
+
+            const eventDate = new Date(booking.event_date);
+            const today = new Date();
+            const isPast = eventDate < today.setHours(0, 0, 0, 0);
+
+            cancelBtn.style.display = booking.status === 'pending' && !isPast ? 'inline-block' : 'none';
+
+            const dateStr = eventDate.toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Event Name</h6>
+                            <p class="mb-0 fw-semibold">${booking.event_name}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Venue</h6>
+                            <p class="mb-0">${booking.venue.name}</p>
+                            <small class="text-muted">${booking.venue.location || ''}</small>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Department</h6>
+                            <p class="mb-0">${booking.department || 'Not specified'}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Date & Time</h6>
+                            <p class="mb-0">${dateStr}</p>
+                            <p class="mb-0">${booking.start_time} - ${booking.end_time}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Participants</h6>
+                            <p class="mb-0">${booking.participants} people</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Status</h6>
+                            <p class="mb-0">${getStatusBadge(booking.status)}</p>
+                        </div>
+                    </div>
+                </div>
+                ${booking.purpose ? `
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-1">Purpose</h6>
+                        <p class="mb-0">${booking.purpose}</p>
+                    </div>
+                ` : ''}
+                ${booking.admin_remarks ? `
+                    <hr>
+                    <div class="mb-0">
+                        <h6 class="text-muted mb-1">Admin Remarks</h6>
+                        <p class="mb-0">${booking.admin_remarks}</p>
+                    </div>
+                ` : ''}
+                ${booking.equipment_requests && booking.equipment_requests.length > 0 ? `
+                    <hr>
+                    <div class="mb-0">
+                        <h6 class="text-muted mb-2">Equipment Requests</h6>
+                        <ul class="list-group list-group-flush">
+                            ${booking.equipment_requests.map(eq => `
+                                <li class="list-group-item px-0">
+                                    ${eq.equipment_name} <span class="badge bg-secondary">${eq.quantity}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            `;
+
+            bookingModal.show();
+        }
+
+        document.getElementById('cancelBookingBtn').addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+
+            try {
+                await API.cancelBooking(currentBookingId);
+                bookingModal.hide();
+                await loadBookings();
+            } catch (error) {
+                alert('Error cancelling booking: ' + error.message);
+            }
+        });
+
+        function getStatusBadge(status) {
+            const badges = {
+                pending: '<span class="badge bg-warning text-dark">Pending</span>',
+                approved: '<span class="badge bg-success">Approved</span>',
+                rejected: '<span class="badge bg-danger">Rejected</span>',
+                cancelled: '<span class="badge bg-secondary">Cancelled</span>'
+            };
+            return badges[status] || '<span class="badge bg-secondary">' + status + '</span>';
+        }
+
+        function updateNavigation(user) {
+            const authNav = document.getElementById('authNav');
+            authNav.innerHTML = `
+                <span class="navbar-text me-3 text-white">
+                    <i class="bi bi-person-circle me-1"></i>${user.name}
+                </span>
+                ${user.role === 'admin' ? `
+                    <a href="/admin.html" class="btn btn-outline-light btn-sm me-2">
+                        <i class="bi bi-speedometer2 me-1"></i>Admin
+                    </a>
+                ` : ''}
+                <button class="btn btn-outline-light btn-sm" onclick="API.logout(); window.location.reload();">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </button>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart College Venue Booking System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-building me-2"></i>VenueBook
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/"><i class="bi bi-house-door me-1"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/venues.html"><i class="bi bi-geo-alt me-1"></i>Venues</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/schedule.html"><i class="bi bi-calendar3 me-1"></i>Events</a>
+                    </li>
+                </ul>
+                <div id="authNav" class="d-flex">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-white text-center py-5">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-3">Smart College Venue Booking System</h1>
+            <p class="lead mb-4">Book venues, manage events, and streamline your campus activities with ease</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/venues.html" class="btn btn-light btn-lg">
+                    <i class="bi bi-search me-2"></i>Browse Venues
+                </a>
+                <a href="/register.html" class="btn btn-outline-light btn-lg" id="heroRegisterBtn">
+                    <i class="bi bi-person-plus me-2"></i>Get Started
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">Why Use Our System?</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-primary text-white rounded-circle mb-3 mx-auto">
+                                <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <h5 class="card-title">Easy Booking</h5>
+                            <p class="card-text text-muted">Submit venue booking requests in minutes with our intuitive interface</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-success text-white rounded-circle mb-3 mx-auto">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h5 class="card-title">Conflict Prevention</h5>
+                            <p class="card-text text-muted">Automatic detection prevents double-booking of venues</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-info text-white rounded-circle mb-3 mx-auto">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <h5 class="card-title">Real-time Status</h5>
+                            <p class="card-text text-muted">Track your booking status and get instant updates</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Venue Categories Section -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Venue Categories</h2>
+            <div class="row g-4" id="venueCategories">
+                <!-- Categories will be loaded by JavaScript -->
+                <div class="col-12 text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="py-5 bg-primary text-white">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3 col-6 mb-3 mb-md-0">
+                    <h2 class="display-4 fw-bold" id="statVenues">40+</h2>
+                    <p class="lead">Venues</p>
+                </div>
+                <div class="col-md-3 col-6 mb-3 mb-md-0">
+                    <h2 class="display-4 fw-bold" id="statCategories">6</h2>
+                    <p class="lead">Categories</p>
+                </div>
+                <div class="col-md-3 col-6">
+                    <h2 class="display-4 fw-bold">24/7</h2>
+                    <p class="lead">Access</p>
+                </div>
+                <div class="col-md-3 col-6">
+                    <h2 class="display-4 fw-bold">Fast</h2>
+                    <p class="lead">Approval</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Events Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Upcoming Events</h2>
+                <a href="/schedule.html" class="btn btn-outline-primary">View All Events</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Venue</th>
+                            <th>Event Name</th>
+                            <th>Organizer</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="upcomingEvents">
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                Loading events...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions for Logged-in Users -->
+    <section class="py-5 bg-light" id="quickActions" style="display: none;">
+        <div class="container">
+            <h2 class="text-center mb-4">Quick Actions</h2>
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-3 col-6">
+                    <a href="/venues.html" class="card h-100 text-decoration-none border-0 shadow-sm hover-card">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-search display-4 text-primary mb-2"></i>
+                            <h6>Browse Venues</h6>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3 col-6">
+                    <a href="/my-bookings.html" class="card h-100 text-decoration-none border-0 shadow-sm hover-card">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-calendar-check display-4 text-success mb-2"></i>
+                            <h6>My Bookings</h6>
+                        </div>
+                    </a>
+                </div>
+                <div class="col-md-3 col-6" id="adminDashboardCard" style="display: none;">
+                    <a href="/admin.html" class="card h-100 text-decoration-none border-0 shadow-sm hover-card">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-speedometer2 display-4 text-danger mb-2"></i>
+                            <h6>Admin Dashboard</h6>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <h5><i class="bi bi-building me-2"></i>VenueBook</h5>
+                    <p class="text-muted mb-0">Smart College Venue Booking System</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">&copy; 2024 All Rights Reserved</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script>
+        // Load venue categories
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadVenueCategories();
+            await loadUpcomingEvents();
+            updateNavigation();
+        });
+
+        async function loadVenueCategories() {
+            const categoriesContainer = document.getElementById('venueCategories');
+            
+            const categories = [
+                { name: 'Event Venues', icon: 'bi-megaphone', color: 'primary', description: 'Auditoriums, Lecture Theatres, Seminar Halls' },
+                { name: 'Academic Rooms', icon: 'bi-book', color: 'success', description: 'Classrooms, Tutorial Rooms' },
+                { name: 'Computer Labs', icon: 'bi-pc-display', color: 'info', description: '12 Computer Labs with 50 computers each' },
+                { name: 'Department Facilities', icon: 'bi-building', color: 'warning', description: 'Civil Engineering Labs and Department Rooms' },
+                { name: 'Sports Facilities', icon: 'bi-trophy', color: 'danger', description: 'Basketball, Badminton, College Ground' },
+                { name: 'Social Spaces', icon: 'bi-people', color: 'secondary', description: 'Cafeteria, Student Lounge, Conference Rooms' }
+            ];
+
+            let html = '';
+            for (const cat of categories) {
+                html += `
+                    <div class="col-md-4 col-lg-4">
+                        <a href="/venues.html?type=${encodeURIComponent(cat.name)}" class="text-decoration-none">
+                            <div class="card h-100 border-0 shadow-sm hover-card">
+                                <div class="card-body text-center p-4">
+                                    <div class="feature-icon bg-${cat.color} text-white rounded-circle mb-3 mx-auto">
+                                        <i class="bi ${cat.icon}"></i>
+                                    </div>
+                                    <h5 class="card-title text-dark">${cat.name}</h5>
+                                    <p class="card-text text-muted small">${cat.description}</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            }
+            categoriesContainer.innerHTML = html;
+        }
+
+        async function loadUpcomingEvents() {
+            const tbody = document.getElementById('upcomingEvents');
+            
+            try {
+                const events = await API.getBookingSchedule(5);
+                
+                if (events.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No upcoming events</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                events.forEach(event => {
+                    const eventDate = new Date(event.event_date).toLocaleDateString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric'
+                    });
+                    html += `
+                        <tr>
+                            <td>${eventDate}</td>
+                            <td>${event.venue.name}</td>
+                            <td>${event.event_name}</td>
+                            <td>${event.user.name}</td>
+                            <td>${event.start_time} - ${event.end_time}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Unable to load events</td></tr>';
+            }
+        }
+
+        function updateNavigation() {
+            const user = API.getCurrentUser();
+            const authNav = document.getElementById('authNav');
+            const quickActions = document.getElementById('quickActions');
+            const heroRegisterBtn = document.getElementById('heroRegisterBtn');
+
+            if (user) {
+                authNav.innerHTML = `
+                    <span class="navbar-text me-3 text-white">
+                        <i class="bi bi-person-circle me-1"></i>${user.name}
+                    </span>
+                    <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                    </button>
+                `;
+                quickActions.style.display = 'block';
+                heroRegisterBtn.style.display = 'none';
+                
+                if (user.role === 'admin') {
+                    document.getElementById('adminDashboardCard').style.display = 'block';
+                }
+            } else {
+                authNav.innerHTML = `
+                    <a href="/login.html" class="btn btn-outline-light btn-sm me-2">Login</a>
+                    <a href="/register.html" class="btn btn-light btn-sm">Register</a>
+                `;
+            }
+        }
+
+        function logout() {
+            API.logout();
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
